@@ -1,0 +1,75 @@
+body {
+  margin: 0;
+  background: #0f172a;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+}
+
+.dashboard {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.dashboard-title {
+  margin: 0 0 1rem;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+}
+
+.dashboard-status {
+  margin: 0 0 2rem;
+  color: #94a3b8;
+}
+
+.status-live,
+.status-idle {
+  font-weight: 600;
+}
+
+.status-live {
+  color: #4ade80;
+}
+
+.status-idle {
+  color: #f87171;
+}
+
+.dashboard-error {
+  max-width: 28rem;
+  margin: -1rem 0 2rem;
+  color: #fca5a5;
+  text-align: center;
+}
+
+.microphone-button {
+  border: 0;
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 1.125rem;
+  font-weight: 600;
+  transition: background-color 150ms ease;
+}
+
+.microphone-button.start {
+  background: #2563eb;
+}
+
+.microphone-button.start:hover {
+  background: #1d4ed8;
+}
+
+.microphone-button.stop {
+  background: #dc2626;
+}
+
+.microphone-button.stop:hover {
+  background: #b91c1c;
+}

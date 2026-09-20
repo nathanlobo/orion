@@ -1,0 +1,13 @@
+build/
+install/
+log/
+web/node_modules/
+web/.next/
+*.pt
+*.bin
+*.onnx
+*.safetensors
+*.h5
+.cache/
+models/
+huggingface/*.tsbuildinfo
