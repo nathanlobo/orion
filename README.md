@@ -41,6 +41,7 @@ The repository also contains separate wake-word, Ollama, and text-to-speech node
 - Python 3.10 or newer
 - `python3-pip` and `python3-venv`
 - Node.js 20.9 or newer and npm
+- Gazebo Harmonic and the ROS-Gazebo integration (`ros-jazzy-ros-gz`) for simulation
 - Cloudflare Tunnel (`cloudflared`) if the dashboard is accessed through a public HTTPS hostname
 
 Next.js 16 requires Node.js 20.9 or newer. Node.js 18 is not sufficient for the current web dependencies.
@@ -54,7 +55,7 @@ git clone <repository-url> ~/humanoid_ws
 cd ~/humanoid_ws
 ```
 
-If the workspace is stored elsewhere, update the model path in `src/humanoid_voice/humanoid_voice/tts_node.py` before using TTS.
+If the workspace is stored elsewhere, update the model path in `src/voice/voice/tts_node.py` before using TTS.
 
 ## Install ROS and Python dependencies
 
@@ -216,7 +217,88 @@ ros2 node list
 ss -ltn | grep -E '50005|8080'
 ```
 
-The workspace does not include a robot driver or a `/cmd_vel` consumer. The commands can be inspected with `ros2 topic echo`, but a separate robot controller is required to make the robot move.
+The voice-command package publishes `/cmd_vel`, but it is not connected to Gazebo or a physical robot controller. The Gazebo test robot is operated separately through Gazebo Transport.
+
+## Run the standalone Gazebo test
+
+The project includes a small differential-drive robot as a standalone Gazebo test. It is not connected to the ROS voice nodes, their `/cmd_vel` topic, or a physical robot. Use `gz topic` commands to drive it directly through Gazebo Transport. It is a disposable test model, not a humanoid or a description of the final robot. The Gazebo DiffDrive system limits simulated speed to 0.5 m/s and turning speed to 1.0 rad/s.
+
+Install Gazebo Harmonic and the ROS 2 Jazzy Gazebo integration if they are not already installed:
+
+```bash
+sudo apt update
+sudo apt install -y ros-jazzy-ros-gz
+```
+
+Build and launch the simulator in one terminal:
+
+```bash
+cd ~/humanoid_ws
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select humanoid_voice
+source install/setup.bash
+ros2 launch humanoid_voice voice_test_gazebo.launch.py
+```
+
+With Gazebo running, use Gazebo Transport to send commands directly to the simulated robot:
+
+```bash
+# Drive forward
+gz topic -t /cmd_vel -m gz.msgs.Twist \
+  -p "linear: {x: 0.3}, angular: {z: 0.0}"
+
+# Turn in place
+gz topic -t /cmd_vel -m gz.msgs.Twist \
+  -p "linear: {x: 0.0}, angular: {z: 0.5}"
+
+# Stop
+gz topic -t /cmd_vel -m gz.msgs.Twist \
+  -p "linear: {x: 0.0}, angular: {z: 0.0}"
+```
+
+These commands are sent to Gazebo Transport, not ROS 2; the simulation launch does not start a ROS-Gazebo bridge. Close the Gazebo launch process to stop the simulator. This is only a standalone model and basic drive test; voice control, ROS odometry, and the actual humanoid model are not part of this simulation setup.
+
+## Experimental humanoid walking simulation
+
+`humanoid_walk_test` launches a separate primitive humanoid biped in Gazebo. It is independent of the voice pipeline and does not use its `/cmd_vel` topic. A separate terminal node provides keyboard control over eight actuated leg joints. Its slower, smaller leg swings and ankle compensation are intended to reduce forward pitching, but the gait has no balance feedback, so the robot may still wobble or fall. This is not a validated walking controller or a model of the final robot.
+
+Build the package:
+
+```bash
+cd ~/orion
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select humanoid_voice
+source install/setup.bash
+```
+
+In the first terminal, launch Gazebo and spawn the humanoid:
+
+```bash
+ros2 launch humanoid_voice humanoid_walk_test.launch.py
+```
+
+In a second sourced terminal, start keyboard control:
+
+```bash
+cd ~/orion
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 run humanoid_voice humanoid_walk_test
+```
+
+Use these keys in the keyboard-controller terminal:
+
+| Key | Action |
+| --- | --- |
+| `W` | Walk forward |
+| `S` | Walk backward |
+| `A` / `D` | Walk with an experimental left/right stride bias |
+| `Space` | Stop gait and command a neutral leg pose |
+| `Q` | Exit the keyboard controller; Gazebo stays open |
+
+The left/right controls only bias the relative stride lengths; turning is not guaranteed. The gait is open-loop, so falling is expected. Closing the Gazebo terminal stops the simulation.
+
+This simulation's ROS-Gazebo bridge only carries joint-position targets. It does not connect voice commands or `/cmd_vel`.
 
 ## Supported voice commands
 
@@ -354,7 +436,7 @@ The main implementation files are:
 ```text
 web/app/page.tsx                              Browser microphone client
 web/bridge.js                                 WebSocket-to-TCP bridge
-src/humanoid_voice/humanoid_voice/
+src/voice/voice/
   audio_receiver_node.py                      PCM receiver and faster-whisper STT
   command_parser.py                           Transcript-to-command parser
   audio_publisher.py                          Mock /audio_in publisher

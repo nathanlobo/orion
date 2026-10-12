@@ -1,0 +1,23 @@
+{
+  "0": "Web Dashboard Dependencies",
+  "1": "TypeScript Build Configuration",
+  "2": "Ollama and Speech Output",
+  "3": "Browser Audio Streaming",
+  "4": "Whisper Speech Recognition",
+  "5": "Voice Command Parsing",
+  "6": "Microphone Input Mock",
+  "7": "Web Runtime Dependencies",
+  "8": "Mock Audio Publisher",
+  "9": "Wake Word Processing",
+  "10": "Development Dependencies",
+  "11": "Copyright Test",
+  "12": "Flake8 Test",
+  "13": "Docstring Test",
+  "14": "Next.js Configuration",
+  "15": "Global Web Types and Styles",
+  "16": "Next Build Types",
+  "17": "PostCSS Configuration",
+  "18": "ROS Package Setup",
+  "19": "Python Package Module",
+  "20": "Whisper Test Stub"
+}
