@@ -30,44 +30,30 @@ class LLMProcessor(Node):
 
     def prompt_callback(self, msg):
         self.get_logger().info(f'Thinking about: "{msg.data}"')
-        
+
         url = f"http://{self.windows_ip}:11434/api/generate"
         payload = {
             "model": "llama3.2:1b",
             "prompt": msg.data,
             "stream": False
         }
-        
+
         try:
             response = requests.post(url, json=payload)
             data = response.json()
-            
+
             # Check if Ollama returned an error (like a missing model)
             if 'error' in data:
                 self.get_logger().error(f"Ollama API Error: {data['error']}")
                 return
-            
+
             response_text = data.get('response', '')
             self.get_logger().info(f'Response: {response_text}')
-            
+
             out_msg = String()
             out_msg.data = response_text
             self.publisher_.publish(out_msg)
-            
-        except Exception as e:
-            self.get_logger().error(f'Failed to reach Windows Ollama: {e}')
-        
-        try:
-            response = requests.post(url, json=payload)
-            response_text = response.json().get('response', '')
-            
-            self.get_logger().info(f'Response: {response_text}')
-            
-            # Publish the response to the ROS 2 network
-            out_msg = String()
-            out_msg.data = response_text
-            self.publisher_.publish(out_msg)
-            
+
         except Exception as e:
             self.get_logger().error(f'Failed to reach Windows Ollama: {e}')
 

@@ -13,7 +13,7 @@ class TTSProcessor(Node):
             self.listener_callback,
             10)
         
-        self.model_path = os.path.expanduser('~/humanoid_ws/models/en_US-lessac-low.onnx')
+        self.model_path = os.path.expanduser('~/orion/models/en_US-lessac-low.onnx')
         self.get_logger().info('TTS Node initialized. Waiting for AI responses...')
 
     def listener_callback(self, msg):

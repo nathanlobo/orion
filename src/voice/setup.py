@@ -3,7 +3,7 @@ import os
 
 from setuptools import find_packages, setup
 
-package_name = 'humanoid_voice'
+package_name = 'orion_voice'
 
 setup(
     name=package_name,
@@ -46,7 +46,6 @@ setup(
             'mic_publisher = voice.mic_publisher:main',
             'audio_receiver = voice.audio_receiver_node:main',
             'command_parser = voice.command_parser:main',
-            'humanoid_walk_test = voice.humanoid_walk_test:main',
         ],
     },
 )

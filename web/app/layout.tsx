@@ -2,8 +2,9 @@ import React from 'react';
 import './globals.css';
 
 export const metadata = {
-  title: 'Humanoid Command Center',
-  description: 'ROS 2 Humanoid Robotics Control Dashboard',
+  title: 'Orion Command Center',
+  description: 'ROS 2 Orion Robotics Control Dashboard',
+  icons: { icon: 'data:,' },
 };
 
 export default function RootLayout({

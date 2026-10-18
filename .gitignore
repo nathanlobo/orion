@@ -1,13 +1,43 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- ROS 2 / colcon workspace ---
 build/
 install/
 log/
+
+# --- Node / Next.js ---
 web/node_modules/
 web/.next/
+*.tsbuildinfo
+
+# --- Models & weights ---
+/models/
+.cache/
 *.pt
 *.bin
 *.onnx
 *.safetensors
 *.h5
-.cache/
-models/
-huggingface/*.tsbuildinfo
+
+# --- Generated tool output ---
+graphify-out/
+
+# --- Secrets / local env ---
+.env
+.env.*
+!.env.example
+
+# --- Editors & OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
