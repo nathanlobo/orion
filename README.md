@@ -157,6 +157,119 @@ colcon build --packages-select orion_voice
 source install/setup.bash
 ```
 
+## Launch the camera system
+
+The `camera_system` package contains one ROS node, `camera_node`. It opens the
+webcam at `/dev/video0`, publishes the raw image, runs MediaPipe face detection,
+and publishes an annotated image and target telemetry. The launch file starts
+that node together with `rqt_image_view`; it shuts down both processes if
+either one exits.
+
+### Install dependencies and the face model
+
+Run these commands in Ubuntu/WSL. Install MediaPipe into the system Python used
+by ROS 2; this workspace does not use a virtual environment:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+sudo apt update
+sudo apt install -y \
+  python3-pip \
+  python3-numpy \
+  python3-opencv \
+  ros-jazzy-cv-bridge \
+  ros-jazzy-rqt-image-view
+python3 -m pip install --user --break-system-packages "numpy<2" mediapipe
+```
+
+The launch file defaults to MediaPipe's full-range face model, so download it
+to the default path:
+
+```bash
+mkdir -p ~/.ros/models
+curl -L \
+  https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_full_range/float16/1/blaze_face_full_range.tflite \
+  -o ~/.ros/models/blaze_face_full_range.tflite
+```
+
+Check that ROS's Python can import the dependencies and that the model exists:
+
+```bash
+python3 -c "import mediapipe, numpy, cv2, rclpy; print('Dependencies OK')"
+test -s ~/.ros/models/blaze_face_full_range.tflite && echo "Face model OK"
+```
+
+### Build and launch
+
+```bash
+cd ~/orion
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select camera_system --symlink-install
+source install/setup.bash
+ros2 launch camera_system camera_system.launch.py
+```
+
+The launch starts the camera node and an `rqt_image_view` window. In the
+viewer's topic menu, select `/head_camera/image_detections` to see the green
+face box and estimated distance, or `/head_camera/image_raw` to see the
+unannotated image. Launch and node logs appear in the terminal. Press `Ctrl+C`
+in that terminal to stop everything; closing the preview window also stops
+the camera node.
+
+The launch argument `face_model_path` selects a different `.tflite` model. For
+close-range use, download the short-range model and pass its path:
+
+```bash
+curl -L \
+  https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite \
+  -o ~/.ros/models/blaze_face_short_range.tflite
+ros2 launch camera_system camera_system.launch.py \
+  face_model_path:=$HOME/.ros/models/blaze_face_short_range.tflite
+```
+
+The full-range model is intended for faces up to about 5 m away; the
+short-range model is intended for closer faces (about 2 m).
+
+### Topics and checking output
+
+| Topic | ROS message type | Meaning |
+|---|---|---|
+| `/head_camera/image_raw` | `sensor_msgs/msg/Image` | Original BGR camera frame. |
+| `/head_camera/image_detections` | `sensor_msgs/msg/Image` | Annotated frame; a green box and estimated range appear when a face is detected. |
+| `/head_camera/target_bearing` | `geometry_msgs/msg/Vector3Stamped` | Published when a face is detected. `vector.x` is horizontal and `vector.y` vertical bearing, in radians; `vector.z` is zero. |
+| `/head_camera/target_distance_m` | `std_msgs/msg/Float32` | Estimated distance in metres; zero means no face was detected in that frame. |
+
+With the node running, use another terminal:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ~/orion/install/setup.bash
+ros2 topic hz /head_camera/image_detections
+ros2 topic echo --once /head_camera/target_bearing
+ros2 topic echo --once /head_camera/target_distance_m
+```
+
+Move a face into view: the detection image should show a box, the distance
+should be positive, and the bearing should approach zero when the face is
+centered. The distance is approximate and depends on the assumed face width
+(`known_face_width_m`, default `0.16`) and focal length (`focal_length_px`,
+default `600.0`); calibrate these for the camera before relying on range values.
+The minimum detection confidence defaults to `0.5`. These outputs are vision
+telemetry only—the package does not subscribe to servo commands or control
+pan/tilt hardware.
+
+### Troubleshooting
+
+- **Camera failed to open:** check `ls -l /dev/video0` and attach the webcam to
+  WSL with `usbipd`; the launch will stop if the camera node exits.
+- **Model not found:** confirm the selected `face_model_path` exists and is a
+  readable `.tflite` file.
+- **No face box:** ensure the face is visible and well lit. The launch uses the
+  full-range model by default; try the short-range model for closer faces.
+  Detection at the models' stated ranges is not guaranteed.
+- **Preview window does not appear:** install `ros-jazzy-rqt-image-view` and
+  confirm WSLg/Linux GUI support is available.
+
 ## Download the TTS model
 
 The repository ignores `models/`, so a fresh clone does not contain the Piper voice model. `tts_node` loads `~/orion/models/en_US-lessac-low.onnx` and its JSON file, which is why the workspace must live at `~/orion` (see [Clone the workspace](#clone-the-workspace)).
